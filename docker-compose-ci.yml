@@ -9,7 +9,7 @@ services:
     ports:
       - "80:80"
   api:
-    image: lubasergei/diplom_slubash:$GITHUB_REF_NAME-$GITHUB_RUN_ID
+    image: lubasergei/diplom_hw34_slubash:$GITHUB_REF_NAME-$GITHUB_RUN_ID
     restart: always
     environment:
       DEBUG: ${DEBUG}
@@ -26,7 +26,7 @@ services:
     ports:
       - "8000:8000"
   migrations:
-     image: lubasergei/diplom_slubash:$GITHUB_REF_NAME-$GITHUB_RUN_ID
+     image: lubasergei/diplom_hw34_slubash:$GITHUB_REF_NAME-$GITHUB_RUN_ID
      environment:
        POSTGRES_HOST: ${POSTGRES_HOST}
        POSTGRES_USER: ${POSTGRES_USER}

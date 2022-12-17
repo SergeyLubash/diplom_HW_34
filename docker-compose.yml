@@ -12,7 +12,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: lubasergei/diplom_slubash
+    image: lubasergei/diplom_hw34_slubash
     restart: always
     env_file:
       - .env
@@ -25,7 +25,7 @@ services:
       - "8000:8000"
   migrations:
      build: .
-     image: lubasergei/diplom_slubash
+     image: lubasergei/diplom_hw34_slubash
      depends_on:
        db:
          condition: service_healthy
