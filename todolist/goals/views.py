@@ -1,15 +1,58 @@
+from django.db import transaction
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, filters, permissions
+from rest_framework.generics import RetrieveUpdateDestroyAPIView
 from rest_framework.pagination import LimitOffsetPagination
 
 from .filters import GoalDateFilter
-from .models import GoalCategory, Goal, GoalComment
-from .serializers import GoalCreateSerializer, GoalCategorySerializer, GoalCategoryCreateSerializer, GoalSerializer, GoalCommentCreateSerializer, GoalCommentSerializer
+from .models import GoalCategory, Goal, GoalComment, Board
+from .permissions import BoardPermissions, GoalCategoryPermissions
+from .serializers import GoalCreateSerializer, GoalCategorySerializer, GoalCategoryCreateSerializer, GoalSerializer, \
+    GoalCommentCreateSerializer, GoalCommentSerializer, BoardSerializer, BoardListSerializer, BoardCreateSerializer
+
+
+class BoardCreateView(generics.CreateAPIView):
+    model = Board
+    permissions = [permissions.IsAuthenticated]
+    serializer_class = BoardCreateSerializer
+
+
+class BoardView(RetrieveUpdateDestroyAPIView):
+    model = Board
+    permission_classes = [permissions.IsAuthenticated, BoardPermissions]
+    serializer_class = BoardSerializer
+
+    def get_queryset(self):
+        # Обратите внимание на фильтрацию – она идет через participants
+        return Board.objects.filter(participants__user=self.request.user, is_deleted=False)
+
+    def perform_destroy(self, instance: Board):
+        # При удалении доски помечаем ее как is_deleted,
+        # «удаляем» категории, обновляем статус целей
+        with transaction.atomic():
+            instance.is_deleted = True
+            instance.save()
+            instance.categories.update(is_deleted=True)
+            Goal.objects.filter(category__board=instance).update(
+                status=Goal.Status.archived
+            )
+        return instance
+
+
+class BoardListView(generics.ListAPIView):
+    model = Board
+    permission_classes = [permissions.IsAuthenticated, BoardPermissions]
+    serializer_class = BoardListSerializer
+    filter_backends = [filters.OrderingFilter]
+    ordering = ['title']
+
+    def get_queryset(self):
+        return Board.objects.filter(participants__user=self.request.user, is_deleted=False)
 
 
 class GoalCategoryCreateView(generics.CreateAPIView):
     model = GoalCategory
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, GoalCategoryPermissions]
     serializer_class = GoalCategoryCreateSerializer
 
 
@@ -24,11 +67,12 @@ class GoalCategoryListView(generics.ListAPIView):
     ]
     ordering_fields = ['title', 'created']
     ordering = ['title']
-    search_fields = ['title']
+    search_fields = ['title', 'board']
 
     def get_queryset(self):
         return GoalCategory.objects.filter(
-            user=self.request.user, is_deleted=False
+            board__participants__user=self.request.user,
+            is_deleted=False,
         )
 
 
@@ -38,7 +82,10 @@ class GoalCategoryView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return GoalCategory.objects.filter(user=self.request.user, is_deleted=False)
+        return GoalCategory.objects.filter(
+            board__participants__user=self.request.user,
+            is_deleted=False,
+        )
 
     def perform_destroy(self, instance):
         instance.is_deleted = True
