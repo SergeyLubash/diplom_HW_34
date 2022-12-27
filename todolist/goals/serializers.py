@@ -2,8 +2,8 @@ from django.db import transaction
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from .models import GoalCategory, Goal, GoalComment, Board, BoardParticipant
-from core import serializers
-from core import models
+from ..core.models import User
+from ..core.serializers import UserSerializer
 
 USER_MODEL = get_user_model()
 
@@ -30,7 +30,7 @@ class BoardParticipantSerializer(serializers.ModelSerializer):
         required=True, choices=BoardParticipant.Role.choices
     )
     user = serializers.SlugRelatedField(
-        slug_field="username", queryset=models.User.objects.all()
+        slug_field="username", queryset=User.objects.all()
     )
 
     class Meta:
@@ -95,7 +95,7 @@ class GoalCategoryCreateSerializer(serializers.ModelSerializer):
 
 
 class GoalCategorySerializer(serializers.ModelSerializer):
-    user = serializers.UserSerializer(read_only=True)
+    user = UserSerializer(read_only=True)
 
     class Meta:
         model = GoalCategory
@@ -128,7 +128,7 @@ class GoalCreateSerializer(serializers.ModelSerializer):
 
 
 class GoalSerializer(serializers.ModelSerializer):
-    user = serializers.UserSerializer(read_only=True)
+    user = UserSerializer(read_only=True)
 
     class Meta:
         model = Goal
@@ -162,7 +162,7 @@ class GoalCommentCreateSerializer(serializers.ModelSerializer):
 
 
 class GoalCommentSerializer(serializers.ModelSerializer):
-    user = serializers.UserSerializer(read_only=True)
+    user = UserSerializer(read_only=True)
 
     class Meta:
         model = GoalComment
