@@ -3,8 +3,8 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from .models import GoalCategory, Goal, GoalComment, Board, BoardParticipant
 from core.serializers import UserSerializer
+# from core.models import User
 from core.models import User
-
 
 USER_MODEL = get_user_model()
 
